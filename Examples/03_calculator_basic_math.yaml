@@ -1,0 +1,69 @@
+name: Calculator Basic Math
+description: Opens Calculator, performs 42 + 58, asserts result is 100
+version: "1.0"
+target_app:
+  name: Calculator
+  bundle_id: com.apple.calculator
+  launch: true
+
+on_failure: abort
+
+setup:
+  - name: Wait for Calculator
+    action: wait
+    duration: 1
+
+  - name: Clear any previous input
+    action: key_combo
+    key: cmd+k
+
+steps:
+  - name: Click 4
+    action: click
+    element:
+      role: AXButton
+      label: "4"
+
+  - name: Click 2
+    action: click
+    element:
+      role: AXButton
+      label: "2"
+
+  - name: Click plus
+    action: click
+    element:
+      role: AXButton
+      label: "+"
+
+  - name: Click 5
+    action: click
+    element:
+      role: AXButton
+      label: "5"
+
+  - name: Click 8
+    action: click
+    element:
+      role: AXButton
+      label: "8"
+
+  - name: Click equals
+    action: click
+    element:
+      role: AXButton
+      label: "="
+
+  - name: Wait for result
+    action: wait
+    duration: 0.5
+
+  - name: Assert result is 100
+    action: assert_element
+    element:
+      role: AXStaticText
+      value: "100"
+
+  - name: Screenshot result
+    action: screenshot
+    name: calculator_result

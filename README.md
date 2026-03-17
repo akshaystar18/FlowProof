@@ -1,88 +1,159 @@
 # FlowProof
 
-**Automated Workflow Testing for macOS Applications**
+**FlowProof** is a macOS app for defining and running automated UI test workflows using simple YAML files and the macOS Accessibility API. No coding required — describe what to click, type, and assert, and FlowProof does the rest.
 
-FlowProof lets you define, record, execute, and validate automated workflow tests against any desktop app on macOS. Upload a YAML workflow, hit Run, and get a detailed pass/fail dashboard with per-step screenshots.
+---
 
-## Quick Start
+## Features
 
-```bash
-# Build
-swift build
+- **YAML-based workflows** — Human-readable test scripts, version-controllable
+- **macOS Accessibility API** — Native element targeting by role, label, and identifier
+- **Vision Engine** — Text detection and screenshot capture via Vision framework
+- **Run History** — Every run is stored with step-by-step results and screenshots
+- **Recorder** *(experimental)* — Record clicks and keystrokes to generate workflow YAML
+- **Retry & failure strategies** — Abort, skip, or retry on step failure
 
-# Run CLI
-swift run FlowProof run Examples/test-slack-message.yaml --output text
-
-# Validate a workflow without running it
-swift run FlowProof validate Examples/test-figma-export.yaml
-```
+---
 
 ## Requirements
 
 - macOS 13 Ventura or later
-- Accessibility permission (System Settings > Privacy & Security > Accessibility)
-- Swift 5.9+
+- Xcode 15+ / Swift 5.9+ (to build from source)
+- Accessibility permission (Settings → Privacy & Security → Accessibility)
+
+---
+
+## Building
+
+```bash
+./BUILD_AND_RUN.command
+```
+
+Or manually:
+
+```bash
+swift build -c release
+```
+
+---
+
+## Quick Start
+
+1. Launch **FlowProof.app**
+2. Grant **Accessibility** permission when prompted
+3. Click **Import Workflow** and open one of the example YAML files from `Examples/`
+4. Click **Run** — watch the steps execute in real time
+5. View pass/fail results and screenshots in the Run History panel
+
+---
+
+## Workflow YAML Format
+
+```yaml
+name: My Test Workflow
+description: What this workflow does
+version: "1.0"
+
+target_app:
+  name: Safari
+  bundle_id: com.apple.Safari
+  launch: true   # launch the app automatically
+
+on_failure: abort   # abort | skip | retry
+
+variables:
+  username: testuser
+  password: secret123
+
+setup:          # runs before main steps, failures abort the run
+  - name: Wait for app
+    action: wait
+    duration: 2
+
+steps:
+  - name: Click Login button
+    action: click
+    element:
+      role: AXButton
+      label: Login
+
+  - name: Type username
+    action: type
+    text: "{{username}}"
+
+  - name: Assert welcome message
+    action: assert_text
+    expected: "Welcome, testuser"
+    match_mode: contains
+
+teardown:       # runs after steps regardless of pass/fail
+  - name: Close app
+    action: key_combo
+    key: cmd+q
+```
+
+---
+
+## Available Actions
+
+| Action | Description |
+|---|---|
+| `click` | Click a UI element by role/label |
+| `type` | Type text into focused field |
+| `key_combo` | Press keyboard shortcut (e.g., `cmd+s`) |
+| `wait` | Wait N seconds |
+| `assert_text` | Assert text is visible on screen |
+| `assert_element` | Assert a UI element exists with given attributes |
+| `screenshot` | Capture a screenshot of the target app window |
+| `scroll` | Scroll in a direction |
+| `set_variable` | Set a variable for use in later steps |
+| `launch` | Launch an application by bundle ID |
+| `conditional` | If/else branching based on element or text presence |
+| `loop` | Repeat a set of steps N times |
+
+---
+
+## Example Workflows
+
+See the [`Examples/`](Examples/) directory:
+
+| File | Description |
+|---|---|
+| `01_safari_google_search.yaml` | Opens Safari, performs a Google search, asserts results appear |
+| `02_textedit_create_document.yaml` | Creates a TextEdit document, types content, verifies text |
+| `03_calculator_basic_math.yaml` | Opens Calculator, computes 42 + 58, asserts result is 100 |
+
+---
+
+## Use Cases
+
+- **QA regression testing** for macOS apps without writing Swift test code
+- **Automated UI checks** in CI/CD (run headlessly via command line)
+- **Onboarding validation** — verify new machine setup completes correctly
+- **Accessibility auditing** — confirm elements are reachable by Accessibility APIs
+- **Demo automation** — run scripted product demos repeatably
+
+---
 
 ## Project Structure
 
 ```
 FlowProof/
-├── Package.swift
 ├── Sources/FlowProof/
-│   ├── App/                    # SwiftUI app entry + content view + CLI
-│   ├── Models/                 # Data models, DB schema, GRDB persistence
-│   ├── Parser/                 # YAML/JSON workflow parser + variable resolver
-│   ├── Engine/                 # Automation: AX, CGEvent, Vision, hybrid locator
-│   ├── Assertions/             # 21 assertion types across 6 categories
-│   ├── Sequencer/              # Step executor, workflow runner, report generator
-│   ├── Recorder/               # Event capture, action inference, YAML generation
-│   ├── Dashboard/              # SwiftUI views: dashboard, detail, recorder
-│   └── Utils/                  # Extensions and helpers
-├── Tests/FlowProofTests/       # Unit tests
-└── Examples/                   # Sample workflow YAML files
+│   ├── App/              # App entry point, AppState
+│   ├── Dashboard/        # SwiftUI views (main UI)
+│   ├── Engine/           # AccessibilityEngine, InputEngine, VisionEngine
+│   ├── Models/           # Workflow, Run, Database models
+│   ├── Parser/           # YAML → Workflow parsing
+│   ├── Recorder/         # Event capture & action inference
+│   └── Sequencer/        # WorkflowRunner, StepExecutor
+├── Examples/             # Sample YAML workflows
+├── Package.swift
+└── BUILD_AND_RUN.command
 ```
 
-## Architecture
-
-Three-tier automation engine with automatic fallback:
-
-1. **Accessibility API** (AXUIElement) — Primary. Works with native Cocoa/AppKit apps.
-2. **Vision Framework** (OCR + Template Matching) — Fallback for Electron/web apps.
-3. **CGEvent** (Raw Input) — Universal fallback for any app.
-
-## Defining Workflows
-
-Workflows are YAML files with a clean schema:
-
-```yaml
-name: "My Workflow"
-version: "1.0"
-target_app:
-  name: "Safari"
-  bundle_id: "com.apple.Safari"
-  launch: true
-variables:
-  url: "https://example.com"
-steps:
-  - name: "Navigate to URL"
-    action: key
-    combo: "cmd+l"
-  - action: type
-    text: "${url}"
-  - action: key
-    combo: "return"
-  - name: "Verify page loaded"
-    action: assert
-    type: text_contains
-    target:
-      text_ocr: "Example Domain"
-    expected: "Example Domain"
-```
-
-## Supported Actions
-
-click, drag, type, key, scroll, wait, upload, download, assert, screenshot, launch, conditional, loop, sub_workflow, set_variable, clipboard, menu
+---
 
 ## License
 
-Proprietary. All rights reserved.
+MIT

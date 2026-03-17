@@ -1,0 +1,64 @@
+name: TextEdit Document Creation
+description: Creates a new TextEdit document, types content, and verifies it
+version: "1.0"
+target_app:
+  name: TextEdit
+  bundle_id: com.apple.TextEdit
+  launch: true
+
+on_failure: abort
+
+variables:
+  document_content: "Hello from FlowProof! This document was created automatically."
+
+setup:
+  - name: Wait for TextEdit
+    action: wait
+    duration: 1
+
+  - name: Open new document
+    action: key_combo
+    key: cmd+n
+
+steps:
+  - name: Wait for document
+    action: wait
+    duration: 1
+
+  - name: Type content
+    action: type
+    text: "{{document_content}}"
+
+  - name: Wait after typing
+    action: wait
+    duration: 0.5
+
+  - name: Assert text was entered
+    action: assert_element
+    element:
+      role: AXTextArea
+      value: "{{document_content}}"
+
+  - name: Screenshot document
+    action: screenshot
+    name: document_created
+
+  - name: Select all text
+    action: key_combo
+    key: cmd+a
+
+  - name: Assert selection exists
+    action: assert_element
+    element:
+      role: AXTextArea
+
+teardown:
+  - name: Close without saving
+    action: key_combo
+    key: cmd+w
+
+  - name: Click Don't Save
+    action: click
+    element:
+      role: AXButton
+      label: Don't Save

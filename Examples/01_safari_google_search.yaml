@@ -1,0 +1,42 @@
+name: Safari Google Search
+description: Opens Safari, searches Google for "FlowProof", asserts result appears
+version: "1.0"
+target_app:
+  name: Safari
+  bundle_id: com.apple.Safari
+  launch: true
+
+on_failure: abort
+
+variables:
+  search_query: "FlowProof macOS automation"
+
+steps:
+  - name: Wait for Safari to load
+    action: wait
+    duration: 2
+
+  - name: Focus address bar
+    action: key_combo
+    key: cmd+l
+
+  - name: Type search query
+    action: type
+    text: "{{search_query}}"
+
+  - name: Submit search
+    action: key_combo
+    key: return
+
+  - name: Wait for results
+    action: wait
+    duration: 3
+
+  - name: Assert results page loaded
+    action: assert_text
+    expected: "{{search_query}}"
+    match_mode: contains
+
+  - name: Screenshot results
+    action: screenshot
+    name: search_results

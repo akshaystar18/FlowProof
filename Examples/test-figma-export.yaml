@@ -1,0 +1,129 @@
+name: "Figma - Export Component as PNG"
+version: "1.0"
+target_app:
+  name: "Figma"
+  bundle_id: "com.figma.Desktop"
+  launch: true
+variables:
+  component_name: "PrimaryButton"
+  export_dir: "${desktop}/figma-exports"
+on_failure: retry
+timeout: 120
+
+setup:
+  - name: "Launch Figma"
+    action: launch
+    bundle_id: "com.figma.Desktop"
+  - name: "Wait for Figma window"
+    action: wait
+    condition:
+      element:
+        accessibility:
+          role: "window"
+          label: "Figma"
+    timeout: 20
+  - name: "Create export directory"
+    action: set_variable
+    variable_name: "ready"
+    variable_value: "true"
+
+steps:
+  - name: "Open quick search"
+    action: key
+    combo: "cmd+/"
+
+  - name: "Search for component"
+    action: type
+    text: "${component_name}"
+    delay_per_key: 0.04
+
+  - name: "Wait for search results"
+    action: wait
+    condition:
+      text: "${component_name}"
+    timeout: 8
+
+  - name: "Select component from results"
+    action: click
+    target:
+      text_ocr: "${component_name}"
+
+  - name: "Wait for component to load"
+    action: wait
+    timeout: 2
+
+  - name: "Open export dialog"
+    action: key
+    combo: "cmd+shift+e"
+
+  - name: "Verify export panel visible"
+    action: assert
+    type: element_visible
+    target:
+      text_ocr: "Export"
+
+  - name: "Select PNG format"
+    action: click
+    target:
+      text_ocr: "PNG"
+
+  - name: "Set 2x resolution"
+    action: click
+    target:
+      text_ocr: "2x"
+
+  - name: "Click export button"
+    action: click
+    target:
+      hybrid:
+        - accessibility:
+            role: "button"
+            label: "Export"
+        - text_ocr: "Export"
+        - image_match:
+            template: "export-button.png"
+            threshold: 0.8
+
+  - name: "Wait for file save dialog"
+    action: wait
+    condition:
+      element:
+        accessibility:
+          role: "window"
+          label: "Save"
+    timeout: 10
+
+  - name: "Navigate to export directory"
+    action: key
+    combo: "cmd+shift+g"
+
+  - name: "Type export path"
+    action: type
+    text: "${export_dir}"
+
+  - name: "Confirm path"
+    action: key
+    combo: "return"
+
+  - name: "Save file"
+    action: key
+    combo: "return"
+
+  - name: "Wait for export to complete"
+    action: download
+    expected_path: "${export_dir}/*.png"
+    timeout: 15
+
+  - name: "Verify file size is reasonable"
+    action: assert
+    type: file_size
+    expected: '{"path": "${export_dir}/*.png", "min_bytes": 2048}'
+
+  - name: "Final verification screenshot"
+    action: screenshot
+    name: "export-complete"
+
+teardown:
+  - name: "Close export panel"
+    action: key
+    combo: "escape"

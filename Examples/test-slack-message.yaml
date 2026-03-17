@@ -1,0 +1,96 @@
+name: "Slack - Send Daily Standup Message"
+version: "1.0"
+target_app:
+  name: "Slack"
+  bundle_id: "com.tinyspeck.slackmacgap"
+  launch: true
+variables:
+  channel: "team-standup"
+  message: "Morning! Working on FlowProof today. No blockers."
+on_failure: abort
+timeout: 60
+
+setup:
+  - name: "Launch Slack"
+    action: launch
+    bundle_id: "com.tinyspeck.slackmacgap"
+  - name: "Wait for Slack to load"
+    action: wait
+    condition:
+      element:
+        accessibility:
+          role: "window"
+          label: "Slack"
+    timeout: 15
+
+steps:
+  - name: "Open channel switcher"
+    action: key
+    combo: "cmd+k"
+
+  - name: "Wait for search field"
+    action: wait
+    condition:
+      element:
+        accessibility:
+          role: "textField"
+    timeout: 5
+
+  - name: "Type channel name"
+    action: type
+    text: "${channel}"
+    delay_per_key: 0.03
+
+  - name: "Wait for channel in results"
+    action: wait
+    condition:
+      text: "${channel}"
+    timeout: 5
+
+  - name: "Select channel"
+    action: key
+    combo: "return"
+
+  - name: "Wait for message input"
+    action: wait
+    condition:
+      element:
+        accessibility:
+          role: "textField"
+    timeout: 5
+
+  - name: "Type message"
+    action: type
+    text: "${message}"
+    delay_per_key: 0.02
+
+  - name: "Verify message typed"
+    action: assert
+    type: text_contains
+    target:
+      accessibility:
+        role: "textField"
+    expected: "${message}"
+
+  - name: "Screenshot before send"
+    action: screenshot
+    name: "pre-send"
+
+  - name: "Send message"
+    action: key
+    combo: "return"
+
+  - name: "Wait for message to appear"
+    action: wait
+    condition:
+      text: "${message}"
+    timeout: 10
+
+  - name: "Final screenshot"
+    action: screenshot
+    name: "post-send"
+
+teardown:
+  - name: "Screenshot final state"
+    action: screenshot
+    name: "teardown"

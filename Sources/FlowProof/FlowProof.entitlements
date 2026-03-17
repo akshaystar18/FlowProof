@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Required for AXUIElement API - UI automation of other apps -->
+    <key>com.apple.security.accessibility</key>
+    <true/>
+
+    <!-- Required for ScreenCaptureKit - screenshot capture -->
+    <key>com.apple.security.screen-recording</key>
+    <true/>
+
+    <!-- Required for CGEventTap - workflow recorder -->
+    <key>com.apple.security.input-monitoring</key>
+    <true/>
+
+    <!-- File access for workflow files and screenshots -->
+    <key>com.apple.security.files.user-selected.read-write</key>
+    <true/>
+    <key>com.apple.security.files.downloads.read-write</key>
+    <true/>
+
+    <!-- Network access for potential future features (report sharing) -->
+    <key>com.apple.security.network.client</key>
+    <true/>
+</dict>
+</plist>
